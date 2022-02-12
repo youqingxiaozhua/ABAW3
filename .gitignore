@@ -119,6 +119,7 @@ venv.bak/
 *.pkl.json
 *.log.json
 /work_dirs
+/output
 /mmcls/.mim
 
 # Pytorch
