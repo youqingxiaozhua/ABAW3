@@ -120,6 +120,7 @@ venv.bak/
 *.log.json
 /work_dirs
 /output
+/weights
 /mmcls/.mim
 
 # Pytorch
