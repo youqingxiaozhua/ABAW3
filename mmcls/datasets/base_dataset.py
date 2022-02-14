@@ -2,6 +2,7 @@
 import copy
 from abc import ABCMeta, abstractmethod
 from typing import List
+import os
 
 import mmcv
 import numpy as np
@@ -42,6 +43,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.pipeline = Compose(pipeline)
         self.CLASSES = self.get_classes(classes)
         self.data_infos = self.load_annotations()
+        if os.environ.get('DEBUG_MODE', '0') == '1':
+            self.data_infos = self.data_infos[:100]
 
     @abstractmethod
     def load_annotations(self):
