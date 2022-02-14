@@ -168,6 +168,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         thrs = metric_options.get('thrs')
         average_mode = metric_options.get('average_mode', 'macro')
 
+        logger = get_root_logger()
+
         if 'accuracy' in metrics:
             if thrs is not None:
                 acc = accuracy(results, gt_labels, topk=topk, thrs=thrs)
@@ -198,10 +200,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         
         if 'class_accuracy' in metrics:
             class_accuracy_value = class_accuracy(results, gt_labels, self.CLASSES)
-            logger = get_root_logger()
-            logger.info('Class accuracy:')
             for name, val in zip(self.CLASSES, class_accuracy_value):
-                logger.info(f'{name}: \t{val}')
+                eval_results[f'accuracy.{name}'] = val
         
         if 'MSE' in metrics:
             mse = torch.nn.functional.mse_loss(torch.tensor(results), torch.tensor(gt_labels))
@@ -230,6 +230,15 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                             for thr, value in zip(thrs, values)
                         })
                     else:
-                        eval_results[key] = values
+                        if isinstance(values, np.ndarray):
+                            assert len(values) == len(self.CLASSES)
+                            
+                            logger.info(f'Class {key}')
+                            for i in range(len(values)):
+                                eval_results[f'{key}.{self.CLASSES[i]}'] = values[i]
+                                logger.info(f'{self.CLASSES[i]}: \t{values[i]}')
+                            eval_results[f'{key}.mean'] = values.mean()
+                        else:
+                            eval_results[key] = values
 
         return eval_results
