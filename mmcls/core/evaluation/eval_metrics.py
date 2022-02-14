@@ -99,7 +99,10 @@ def precision_recall_f1(pred, target, average_mode='macro', thrs=0.):
     pred_score = pred_score.flatten()
     pred_label = pred_label.flatten()
 
-    gt_positive = one_hot(target.flatten(), num_classes)
+    if target.shape[-1] == 12:   # TODO: ugly for AU
+        gt_positive = target
+    else:
+        gt_positive = one_hot(target.flatten(), num_classes)
 
     precisions = []
     recalls = []
@@ -257,3 +260,28 @@ def support(pred, target, average_mode='macro'):
         else:
             raise ValueError(f'Unsupport type of averaging {average_mode}.')
     return res
+
+
+def class_accuracy(pred, target, classes=None):
+    confusion_matrix = calculate_confusion_matrix(pred, target)
+    # plot_confusion_matrix(confusion_matrix.type(torch.int16), classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues)
+    with torch.no_grad():
+        result = []
+        for i in range(confusion_matrix.shape[0]):
+            # acc = confusion_matrix[i][i] / confusion_matrix[i].sum()
+            acc = torch.true_divide(confusion_matrix[i][i], confusion_matrix[i].sum())
+            result.append(acc.item() * 100)
+    return result
+
+
+def CCC_score(x, y):
+    """Concordance Correlation Coefficient"""
+    vx = x - np.mean(x)
+    vy = y - np.mean(y)
+    rho = np.sum(vx * vy) / (np.sqrt(np.sum(vx**2)) * np.sqrt(np.sum(vy**2)))
+    x_m = np.mean(x)
+    y_m = np.mean(y)
+    x_s = np.std(x)
+    y_s = np.std(y)
+    ccc = 2*rho*x_s*y_s/(x_s**2 + y_s**2 + (x_m - y_m)**2)
+    return ccc

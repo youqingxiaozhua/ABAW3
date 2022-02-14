@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from mmcls.core.evaluation import precision_recall_f1, support, class_accuracy
+from mmcls.core.evaluation import precision_recall_f1, support, class_accuracy, CCC_score
 from mmcls.models.losses import accuracy
 from mmcls.utils import get_root_logger
 from .pipelines import Compose
@@ -145,7 +145,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         else:
             metrics = metric
         allowed_metrics = [
-            'accuracy', 'precision', 'recall', 'f1_score', 'support', 'class_accuracy', 'MSE'
+            'accuracy', 'precision', 'recall', 'f1_score', 'support', 'class_accuracy', 'MSE',
+            'CCC'
         ]
         eval_results = {}
         results = np.vstack(results)
@@ -202,6 +203,12 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if 'MSE' in metrics:
             mse = torch.nn.functional.mse_loss(torch.tensor(results), torch.tensor(gt_labels))
             eval_results['mse'] = mse.numpy().item()
+        
+        if 'CCC' in metrics:
+            ccc_v = CCC_score(results[:, 0], gt_labels[:, 0])
+            ccc_a = CCC_score(results[:, 1], gt_labels[:, 1])
+            ccc_va = 0.5 * (ccc_v + ccc_a)
+            eval_results.update(dict(ccc_va=ccc_va, ccc_v=ccc_v, ccc_a=ccc_a))
 
         precision_recall_f1_keys = ['precision', 'recall', 'f1_score']
         if len(set(metrics) & set(precision_recall_f1_keys)) != 0:
