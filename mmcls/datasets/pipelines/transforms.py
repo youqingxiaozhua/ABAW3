@@ -9,6 +9,7 @@ import mmcv
 import numpy as np
 from torchvision import transforms as _transforms
 from mmcv.utils import build_from_cfg
+from PIL import Image, ImageFilter
 
 from ..builder import PIPELINES
 from .compose import Compose
@@ -1233,3 +1234,23 @@ class RandomAppliedTrans(object):
         repr_str = self.__class__.__name__
         return repr_str
 
+
+@PIPELINES.register_module()
+class GaussianBlur(object):
+
+    def __init__(self, sigma_min, sigma_max):
+        self.sigma_min = sigma_min
+        self.sigma_max = sigma_max
+
+    def __call__(self, results):
+        for key in results.get('img_fields', ['img']):
+            img = results[key]
+            sigma = np.random.uniform(self.sigma_min, self.sigma_max)
+            img = Image.fromarray(img)
+            img = img.filter(ImageFilter.GaussianBlur(radius=sigma))
+            results[key] = np.array(img).astype('float32')
+        return results
+
+    def __repr__(self):
+        repr_str = self.__class__.__name__
+        return repr_str
