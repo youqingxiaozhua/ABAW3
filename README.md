@@ -36,6 +36,9 @@
 
 </div>
 
+## Improvement
+- Always log the best performance even the current epoch is not the best.
+
 ## Introduction
 
 English | [简体中文](/README_zh-CN.md)
