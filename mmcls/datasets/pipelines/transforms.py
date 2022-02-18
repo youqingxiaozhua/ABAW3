@@ -7,6 +7,8 @@ from typing import Sequence
 
 import mmcv
 import numpy as np
+from torchvision import transforms as _transforms
+from mmcv.utils import build_from_cfg
 
 from ..builder import PIPELINES
 from .compose import Compose
@@ -1209,3 +1211,25 @@ class RandomRotate(object):
                     f'center={self.center}, ' \
                     f'auto_bound={self.auto_bound})'
         return repr_str
+
+
+@PIPELINES.register_module()
+class RandomAppliedTrans(object):
+    """Randomly applied transformations.
+
+    Args:
+        transforms (list[dict]): List of transformations in dictionaries.
+        p (float): Probability.
+    """
+
+    def __init__(self, transforms, p=0.5):
+        t = [build_from_cfg(t, PIPELINES) for t in transforms]
+        self.trans = _transforms.RandomApply(t, p=p)
+
+    def __call__(self, img):
+        return self.trans(img)
+
+    def __repr__(self):
+        repr_str = self.__class__.__name__
+        return repr_str
+
