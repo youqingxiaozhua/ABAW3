@@ -14,13 +14,16 @@ from mmcls.datasets import build_dataloader, build_dataset
 from mmcls.utils import get_root_logger
 
 # TODO import eval hooks from mmcv and delete them from mmcls
-try:
-    from mmcv.runner.hooks import EvalHook, DistEvalHook
-except ImportError:
-    warnings.warn('DeprecationWarning: EvalHook and DistEvalHook from mmcls '
-                  'will be deprecated.'
-                  'Please install mmcv through master branch.')
-    from mmcls.core import EvalHook, DistEvalHook
+# try:
+#     from mmcv.runner.hooks import EvalHook, DistEvalHook
+# except ImportError:
+#     warnings.warn('DeprecationWarning: EvalHook and DistEvalHook from mmcls '
+#                   'will be deprecated.'
+#                   'Please install mmcv through master branch.')
+#     from mmcls.core import EvalHook, DistEvalHook
+from mmcls.core.evaluation.eval_hooks import MyEvalHook as EvalHook
+from mmcls.core.evaluation.eval_hooks import MyEvalHook as DistEvalHook
+
 
 # TODO import optimizer hook from mmcv and delete them from mmcls
 try:

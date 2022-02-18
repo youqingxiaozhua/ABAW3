@@ -1,107 +1,53 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
-import warnings
 
-from mmcv.runner import Hook
-from torch.utils.data import DataLoader
+from mmcv.runner.hooks import EvalHook, DistEvalHook
 
 
-class EvalHook(Hook):
-    """Evaluation hook.
+class MyEvalHook(EvalHook):
+    def _save_ckpt(self, runner, key_score):
+        """Save the best checkpoint.
 
-    Args:
-        dataloader (DataLoader): A PyTorch dataloader.
-        interval (int): Evaluation interval (by epochs). Default: 1.
-    """
+        It will compare the score according to the compare function, write
+        related information (best score, best checkpoint path) and save the
+        best checkpoint into ``work_dir``.
+        """
+        if self.by_epoch:
+            current = f'epoch_{runner.epoch + 1}'
+            cur_type, cur_time = 'epoch', runner.epoch + 1
+        else:
+            current = f'iter_{runner.iter + 1}'
+            cur_type, cur_time = 'iter', runner.iter + 1
 
-    def __init__(self, dataloader, interval=1, by_epoch=True, **eval_kwargs):
-        warnings.warn(
-            'DeprecationWarning: EvalHook and DistEvalHook in mmcls will be '
-            'deprecated, please install mmcv through master branch.')
-        if not isinstance(dataloader, DataLoader):
-            raise TypeError('dataloader must be a pytorch DataLoader, but got'
-                            f' {type(dataloader)}')
-        self.dataloader = dataloader
-        self.interval = interval
-        self.eval_kwargs = eval_kwargs
-        self.by_epoch = by_epoch
+        best_score = runner.meta['hook_msgs'].get(
+            'best_score', self.init_value_map[self.rule])
+        if self.compare_func(key_score, best_score):
+            best_score = key_score
+            runner.meta['hook_msgs']['best_score'] = best_score
 
-    def after_train_epoch(self, runner):
-        if not self.by_epoch or not self.every_n_epochs(runner, self.interval):
-            return
-        from mmcls.apis import single_gpu_test
-        results = single_gpu_test(runner.model, self.dataloader, show=False)
-        self.evaluate(runner, results)
+            if self.best_ckpt_path and self.file_client.isfile(
+                    self.best_ckpt_path):
+                self.file_client.remove(self.best_ckpt_path)
+                runner.logger.info(
+                    (f'The previous best checkpoint {self.best_ckpt_path} was '
+                     'removed'))
 
-    def after_train_iter(self, runner):
-        if self.by_epoch or not self.every_n_iters(runner, self.interval):
-            return
-        from mmcls.apis import single_gpu_test
-        runner.log_buffer.clear()
-        results = single_gpu_test(runner.model, self.dataloader, show=False)
-        self.evaluate(runner, results)
+            best_ckpt_name = f'best_{self.key_indicator}_{current}.pth'
+            self.best_ckpt_path = self.file_client.join_path(
+                self.out_dir, best_ckpt_name)
+            runner.meta['hook_msgs']['best_ckpt'] = self.best_ckpt_path
 
-    def evaluate(self, runner, results):
-        eval_res = self.dataloader.dataset.evaluate(
-            results, logger=runner.logger, **self.eval_kwargs)
-        for name, val in eval_res.items():
-            runner.log_buffer.output[name] = val
-        runner.log_buffer.ready = True
+            runner.save_checkpoint(
+                self.out_dir, best_ckpt_name, create_symlink=False)
+            runner.logger.info(
+                f'Now best checkpoint is saved as {best_ckpt_name}.')
+            runner.logger.info(
+                f'Best {self.key_indicator} is {best_score:0.4f} '
+                f'at {cur_time} {cur_type}.')
+        else:  #  with no increasement
+            runner.logger.info(
+                f'{self.key_indicator} is not get better from {best_score:0.4f} ')
 
 
-class DistEvalHook(EvalHook):
-    """Distributed evaluation hook.
-
-    Args:
-        dataloader (DataLoader): A PyTorch dataloader.
-        interval (int): Evaluation interval (by epochs). Default: 1.
-        tmpdir (str, optional): Temporary directory to save the results of all
-            processes. Default: None.
-        gpu_collect (bool): Whether to use gpu or cpu to collect results.
-            Default: False.
-    """
-
-    def __init__(self,
-                 dataloader,
-                 interval=1,
-                 gpu_collect=False,
-                 by_epoch=True,
-                 **eval_kwargs):
-        warnings.warn(
-            'DeprecationWarning: EvalHook and DistEvalHook in mmcls will be '
-            'deprecated, please install mmcv through master branch.')
-        if not isinstance(dataloader, DataLoader):
-            raise TypeError('dataloader must be a pytorch DataLoader, but got '
-                            f'{type(dataloader)}')
-        self.dataloader = dataloader
-        self.interval = interval
-        self.gpu_collect = gpu_collect
-        self.by_epoch = by_epoch
-        self.eval_kwargs = eval_kwargs
-
-    def after_train_epoch(self, runner):
-        if not self.by_epoch or not self.every_n_epochs(runner, self.interval):
-            return
-        from mmcls.apis import multi_gpu_test
-        results = multi_gpu_test(
-            runner.model,
-            self.dataloader,
-            tmpdir=osp.join(runner.work_dir, '.eval_hook'),
-            gpu_collect=self.gpu_collect)
-        if runner.rank == 0:
-            print('\n')
-            self.evaluate(runner, results)
-
-    def after_train_iter(self, runner):
-        if self.by_epoch or not self.every_n_iters(runner, self.interval):
-            return
-        from mmcls.apis import multi_gpu_test
-        runner.log_buffer.clear()
-        results = multi_gpu_test(
-            runner.model,
-            self.dataloader,
-            tmpdir=osp.join(runner.work_dir, '.eval_hook'),
-            gpu_collect=self.gpu_collect)
-        if runner.rank == 0:
-            print('\n')
-            self.evaluate(runner, results)
+class MyDistEvalHook(DistEvalHook, MyEvalHook):
+    pass
