@@ -79,13 +79,13 @@ test_pipeline = [
 #         ])
 # ]
 
-base_path = 'data/Aff-Wild2/'
-image_path = base_path + 'cropped_aligned_224'
-# image_path = base_path + 'cropped_aligned'
+base_path = 'data/Aff-Wild2/ABAW3/'
+# image_path = base_path + 'cropped_aligned_224'
+image_path = base_path + 'cropped_aligned'
 
-task = 'EXPR_Set'   # EXPR_Set, AU_Set
-# task = 'AU_Set'
-# task = 'VA_Set'
+task = 'EXPR_Classification'
+# task = 'AU_Detection'
+# task = 'VA_Estimation'
 
 data = dict(
     samples_per_gpu=32,
@@ -98,7 +98,7 @@ data = dict(
         dataset=dict(
             type=dataset_type,
             data_prefix=image_path,
-            ann_file=base_path + f'annotations/{task}/Train_Set/',
+            ann_file=base_path + f'Third ABAW Annotations/{task}_Challenge/Train_Set/',
             pipeline=train_pipeline),
     ),
     # train=dict(
@@ -109,12 +109,12 @@ data = dict(
     val=dict(
         type=dataset_type,
         data_prefix=image_path,
-        ann_file=base_path + f'annotations/{task}/Validation_Set',
+        ann_file=base_path + f'Third ABAW Annotations/{task}_Challenge/Validation_Set',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         data_prefix=image_path,
-        ann_file=base_path + f'annotations/{task}/Validation_Set',
+        ann_file=base_path + f'Third ABAW Annotations/{task}_Challenge/Validation_Set',
         pipeline=test_pipeline),
     vis=dict(
         type=dataset_type,
@@ -142,15 +142,15 @@ data = dict(
 # 256, 48
 # 512, 24
 
-if task == 'EXPR_Set':
+if task == 'EXPR_Classification':
     metrics = ['accuracy', 'f1_score', 'class_accuracy']
     save_best='f1_score.mean'
     rule='greater'
-elif task == 'AU_Set':
+elif task == 'AU_Detection':
     metrics = ['f1_score']
     save_best='f1_score.mean'
     rule='greater'
-elif task == 'VA_Set':
+elif task == 'VA_Estimation':
     metrics = ['MSE', 'CCC']
     save_best='ccc_va'
     rule='greater'

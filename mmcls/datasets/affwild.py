@@ -29,7 +29,7 @@ def gen_class_map(dataset_class):
 @DATASETS.register_module()
 class AffWild2(BaseDataset):
 
-    DATASET_CLASSES = [
+    CLASSES = [
         'Neutral',
         'Anger',
         'Disgust',
@@ -37,8 +37,8 @@ class AffWild2(BaseDataset):
         'Happiness',
         'Sadness',
         'Surprise',
+        'Other'
     ]
-    CLASSES = FER_CLASSES[:7]
 
     def process_one_ann(self, dir, ann_file:str):
         with open(os.path.join(dir, ann_file), 'r') as f:
@@ -51,11 +51,11 @@ class AffWild2(BaseDataset):
         return files
 
     def load_annotations(self, label_file=None):
-        if 'EXPR_Set' in self.ann_file:
+        if 'EXPR_' in self.ann_file:
             return self.load_ce_annotations(label_file)
-        elif 'AU_Set' in self.ann_file:
+        elif 'AU_' in self.ann_file:
             return self.load_au_annotations()
-        elif 'VA_Set' in self.ann_file:
+        elif 'VA_' in self.ann_file:
             return self.load_va_annotations()
         else:
             raise ValueError('invalid task')
@@ -70,29 +70,12 @@ class AffWild2(BaseDataset):
         else:
             raise TypeError('ann_file must be a str')
 
-        label_map = gen_class_map(self.DATASET_CLASSES)
+        # label_map = gen_class_map(self.DATASET_CLASSES)
         data_infos = []
         training = 'Train_Set' in label_file
         ce_set = 'EXPR_Set' in label_file
         for ann_file in ann_files:  # xxx.txt
             ce_labels = self.process_one_ann(label_file, ann_file)
-            # if training:
-            #     if ce_set:
-            #         try:
-            #             au_labels = self.process_one_ann(self.ann_file.replace('EXPR_Set', 'AU_Set'), ann_file)
-            #         except FileNotFoundError:
-            #             print(self.ann_file, ann_file)
-            #             continue
-            #     else:   # using AU train set, self.ann_file=..../AU_Set/...
-            #         au_labels = ce_labels
-            #         try:
-            #             ce_labels = self.process_one_ann(self.ann_file.replace('AU_Set', 'EXPR_Set'), ann_file)
-            #         except FileNotFoundError:
-            #             print(self.ann_file, ann_file)
-            #             continue
-            #     if len(ce_labels) != len(au_labels):
-            #         print(f'{len(ce_labels)} != {len(au_labels)}, {self.ann_file}, {ann_file}')
-            #         continue
             for i, label in enumerate(ce_labels):
                 if label == '-1':
                     continue
@@ -102,7 +85,7 @@ class AffWild2(BaseDataset):
                     continue
                 info = {'img_prefix': img_prefix}
                 info['img_info'] = {'filename': filename}
-                label = label_map[int(label)]
+                label = int(label)
                 info['gt_label'] = np.array(label, dtype=np.int64)
                 # if training:
                 #     info['au_label'] = np.array(au_labels[i].split(','), dtype=np.int64)
@@ -152,13 +135,16 @@ class AffWild2(BaseDataset):
         for ann_file in ann_files:  # xxx.txt
             va_labels = self.process_one_ann(self.ann_file, ann_file)
             for i, label in enumerate(va_labels):
+                if int(label.split(',')[0]) == -5:
+                    continue
                 img_prefix = os.path.join(self.data_prefix, ann_file.replace('.txt', ''))
                 filename = f'{str(i).zfill(5)}.jpg'
                 if not os.path.isfile(os.path.join(img_prefix, filename)):
                     continue
                 info = {'img_prefix': img_prefix}
                 info['img_info'] = {'filename': filename}
-                info['gt_label'] = np.array(va_labels[i].split(','), dtype=np.float32)
+                info['gt_label'] = np.array(label.split(','), dtype=np.float32)
+                assert info['gt_label'].max() <= 1 and info['gt_label'].min() >= -1
                 data_infos.append(info)
 
         return data_infos
