@@ -195,11 +195,17 @@ def train_model(model,
         eval_cfg = cfg.get('evaluation', {})
         eval_cfg['by_epoch'] = cfg.runner['type'] != 'IterBasedRunner'
         eval_hook = DistEvalHook if distributed else EvalHook
+        if distributed:
+            from mmcls.apis import multi_gpu_test
+            test_fn = multi_gpu_test
+        else:
+            from mmcls.apis import single_gpu_test
+            test_fn = single_gpu_test
         # `EvalHook` needs to be executed after `IterTimerHook`.
         # Otherwise, it will cause a bug if use `IterBasedRunner`.
         # Refers to https://github.com/open-mmlab/mmcv/issues/1261
         runner.register_hook(
-            eval_hook(val_dataloader, **eval_cfg), priority='LOW')
+            eval_hook(val_dataloader, test_fn=test_fn,  **eval_cfg), priority='LOW')
 
     if cfg.resume_from:
         runner.resume(cfg.resume_from)
