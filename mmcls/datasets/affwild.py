@@ -135,7 +135,7 @@ class AffWild2(BaseDataset):
         for ann_file in ann_files:  # xxx.txt
             va_labels = self.process_one_ann(self.ann_file, ann_file)
             for i, label in enumerate(va_labels):
-                if int(label.split(',')[0]) == -5:
+                if float(label.split(',')[0]) < -1. or float(label.split(',')[1]) < -1:  # skip -5
                     continue
                 img_prefix = os.path.join(self.data_prefix, ann_file.replace('.txt', ''))
                 filename = f'{str(i).zfill(5)}.jpg'
