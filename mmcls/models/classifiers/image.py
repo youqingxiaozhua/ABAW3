@@ -225,7 +225,7 @@ class ImageClassifier(BaseClassifier):
         return x
 
     def aug_test(self, imgs, **kwargs): # TODO: pull request: add aug test to mmcls
-        logit = self.inference(imgs[0], **kwargs)
+        logit = self.inference(imgs[0])
         for i in range(1, len(imgs)):
             cur_logit = self.inference(imgs[i])
             logit += cur_logit
