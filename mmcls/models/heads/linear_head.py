@@ -79,3 +79,8 @@ class LinearClsHead(ClsHead):
         cls_score = self.fc(x)
         losses = self.loss(cls_score, gt_label, **kwargs)
         return losses
+    
+    def extract_feat(self, x):
+        x = self.pre_logits(x)
+        cls_score = self.fc(x)
+        return cls_score
