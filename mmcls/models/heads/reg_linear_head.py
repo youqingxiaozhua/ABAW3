@@ -107,3 +107,6 @@ class LinearRegHead(BaseHead):
         pred = list(pred.detach().cpu().numpy())
         return pred
 
+    def extract_feat(self, x):
+        return self.simple_test(x)
+

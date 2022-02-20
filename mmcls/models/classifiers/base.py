@@ -75,7 +75,7 @@ class BaseClassifier(BaseModule, metaclass=ABCMeta):
         if len(imgs) == 1:
             return self.simple_test(imgs[0], **kwargs)
         else:
-            raise NotImplementedError('aug_test has not been implemented')
+            return self.aug_test(imgs, **kwargs)
 
     @auto_fp16(apply_to=('img', ))
     def forward(self, img, return_loss=True, **kwargs):

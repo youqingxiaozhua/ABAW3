@@ -218,3 +218,18 @@ class ImageClassifier(BaseClassifier):
             raise e
 
         return res
+
+    def inference(self, img):
+        x = self.extract_feat(img)
+        x = self.head.extract_feat(x)
+        return x
+
+    def aug_test(self, imgs, **kwargs): # TODO: pull request: add aug test to mmcls
+        logit = self.inference(imgs[0], **kwargs)
+        for i in range(1, len(imgs)):
+            cur_logit = self.inference(imgs[i])
+            logit += cur_logit
+        logit /= len(imgs)
+        # pred = F.softmax(logit, dim=1)
+        pred = list(logit.cpu().numpy())
+        return pred
