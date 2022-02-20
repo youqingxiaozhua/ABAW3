@@ -29,6 +29,7 @@ from .vgg import VGG
 from .vision_transformer import VisionTransformer
 from .irse import IRSE
 from .iresnet import IResNet
+from .swin_faceX import SwinTransformerFaceX
 
 __all__ = [
     'LeNet5', 'AlexNet', 'VGG', 'RegNet', 'ResNet', 'ResNeXt', 'ResNetV1d',
@@ -36,5 +37,5 @@ __all__ = [
     'ShuffleNetV2', 'MobileNetV2', 'MobileNetV3', 'VisionTransformer',
     'SwinTransformer', 'TNT', 'TIMMBackbone', 'T2T_ViT', 'Res2Net', 'RepVGG',
     'Conformer', 'MlpMixer', 'DistilledVisionTransformer', 'PCPVT', 'SVT',
-    'EfficientNet', 'ConvNeXt', 'HRNet', 'IRSE', 'IResNet'
+    'EfficientNet', 'ConvNeXt', 'HRNet', 'IRSE', 'IResNet', 'SwinTransformerFaceX'
 ]
