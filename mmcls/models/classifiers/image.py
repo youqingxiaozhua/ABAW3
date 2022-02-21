@@ -19,6 +19,7 @@ class ImageClassifier(BaseClassifier):
                  head=None,
                  pretrained=None,
                  train_cfg=None,
+                 freeze=None,
                  init_cfg=None):
         super(ImageClassifier, self).__init__(init_cfg)
 
@@ -70,6 +71,18 @@ class ImageClassifier(BaseClassifier):
                     cfg['type'] = 'BatchCutMix'
                     cfg['prob'] = cutmix_prob
                     self.augments = Augments(cfg)
+        
+        if freeze is not None:
+            if isinstance(freeze, str):
+                freeze = (freeze, )
+            for m in freeze:
+                if hasattr(self, m):
+                    warnings.warn(f'Freeze {m}!')
+                    getattr(self, m).eval()
+                    for param in getattr(self, m).parameters():
+                        param.requires_grad = False
+                else:
+                    warnings.warn(f'Cannot freeze {m} cause it is not in the model')
 
     def extract_feat(self, img, stage='neck'):
         """Directly extract features from the specified stage.
