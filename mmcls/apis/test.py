@@ -62,8 +62,10 @@ def single_gpu_test(model,
                     show=show,
                     out_file=out_file,
                     **show_kwargs)
-
-        batch_size = data['img'].size(0)
+        if isinstance(data['img'], list):
+            batch_size = data['img'][0].size(0)
+        else:
+            batch_size = data['img'].size(0)
         for _ in range(batch_size):
             prog_bar.update()
     return results
