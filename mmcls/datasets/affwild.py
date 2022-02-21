@@ -27,7 +27,7 @@ def gen_class_map(dataset_class):
     return convert_map
 
 @DATASETS.register_module()
-class AffWild2(BaseDataset):
+class ABAW3(BaseDataset):
 
     CLASSES = [
         'Neutral',
@@ -72,8 +72,6 @@ class AffWild2(BaseDataset):
 
         # label_map = gen_class_map(self.DATASET_CLASSES)
         data_infos = []
-        training = 'Train_Set' in label_file
-        ce_set = 'EXPR_Set' in label_file
         for ann_file in ann_files:  # xxx.txt
             ce_labels = self.process_one_ann(label_file, ann_file)
             for i, label in enumerate(ce_labels):
