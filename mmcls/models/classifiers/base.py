@@ -10,6 +10,7 @@ import torch.distributed as dist
 from mmcv.runner import BaseModule
 
 from mmcls.core.visualization import imshow_infos
+from mmcls.utils import get_root_logger
 
 # TODO import `auto_fp16` from mmcv and delete them from mmcls
 try:
@@ -23,9 +24,21 @@ except ImportError:
 class BaseClassifier(BaseModule, metaclass=ABCMeta):
     """Base class for classifiers."""
 
-    def __init__(self, init_cfg=None):
+    def __init__(self, freeze=None, init_cfg=None):
         super(BaseClassifier, self).__init__(init_cfg)
         self.fp16_enabled = False
+        if freeze is not None:
+            logger = get_root_logger()
+            if isinstance(freeze, str):
+                freeze = (freeze, )
+            for m in freeze:
+                if hasattr(self, m):
+                    logger.info(f'freeze {m}')
+                    getattr(self, m).eval()
+                    for param in getattr(self, m).parameters():
+                        param.requires_grad = False
+                else:
+                    logger.warning(f'Can not freeze {m} cause it is not in the model!')
 
     @property
     def with_neck(self):
