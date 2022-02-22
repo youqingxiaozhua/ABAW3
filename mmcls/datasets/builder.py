@@ -34,7 +34,7 @@ def build_dataset(cfg, default_args=None):
             build_dataset(cfg['dataset'], default_args), cfg['times'])
     elif cfg['type'] == 'ClassBalancedDataset':
         dataset = ClassBalancedDataset(
-            build_dataset(cfg['dataset'], default_args), cfg['oversample_thr'])
+            build_dataset(cfg['dataset'], default_args), cfg['oversample_thr'], cfg['method'])
     elif cfg['type'] == 'KFoldDataset':
         cp_cfg = copy.deepcopy(cfg)
         if cp_cfg.get('test_mode', None) is None:
