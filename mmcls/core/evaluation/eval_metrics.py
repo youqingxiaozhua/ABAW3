@@ -257,3 +257,15 @@ def support(pred, target, average_mode='macro'):
         else:
             raise ValueError(f'Unsupport type of averaging {average_mode}.')
     return res
+
+
+def class_accuracy(pred, target, classes=None):
+    confusion_matrix = calculate_confusion_matrix(pred, target)
+    # plot_confusion_matrix(confusion_matrix.type(torch.int16), classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues)
+    with torch.no_grad():
+        result = []
+        for i in range(confusion_matrix.shape[0]):
+            # acc = confusion_matrix[i][i] / confusion_matrix[i].sum()
+            acc = torch.true_divide(confusion_matrix[i][i], confusion_matrix[i].sum())
+            result.append(acc.item() * 100)
+    return result
