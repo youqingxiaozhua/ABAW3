@@ -113,7 +113,8 @@ class ClassBalancedDataset(object):
             heuristic above.
     """
 
-    def __init__(self, dataset, oversample_thr):
+    def __init__(self, dataset, oversample_thr, method='sqrt'):
+        assert method in ('sqrt', 'reciprocal')    # reciprocal，倒数，绝对 balance， repeat_factor = f(c) / max( fc )
         self.dataset = dataset
         self.oversample_thr = oversample_thr
         self.CLASSES = dataset.CLASSES
@@ -146,10 +147,21 @@ class ClassBalancedDataset(object):
 
         # 2. For each category c, compute the category-level repeat factor:
         #    r(c) = max(1, sqrt(t/f(c)))
-        category_repeat = {
-            cat_id: max(1.0, math.sqrt(repeat_thr / cat_freq))
-            for cat_id, cat_freq in category_freq.items()
-        }
+        if self.method == 'sqrt':
+            category_repeat = {
+                cat_id: max(1.0, math.sqrt(repeat_thr / cat_freq))
+                for cat_id, cat_freq in category_freq.items()
+            }
+        elif self.method == 'reciprocal':
+            cat_freq_max = 0
+            for cat_id, cat_freq in category_freq.items():
+                cat_freq_max = max(cat_freq_max, cat_freq)
+            print('cat_freq_max: ', cat_freq_max)
+            category_repeat = {
+                cat_id: cat_freq_max / cat_freq
+                for cat_id, cat_freq in category_freq.items()
+            }
+        print('category_repeat: ', category_repeat)
 
         # 3. For each image I and its labels L(I), compute the image-level
         # repeat factor:
