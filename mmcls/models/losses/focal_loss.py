@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -114,3 +115,45 @@ class FocalLoss(nn.Module):
             reduction=reduction,
             avg_factor=avg_factor)
         return loss_cls
+
+
+@LOSSES.register_module()
+class FocalLossSingleLabel(nn.Module):
+    def __init__(self, class_num, alpha=None, gamma=2, reduction='mean', loss_weight=1.0):
+        super().__init__()
+        if alpha is None:
+            self.alpha = torch.ones(class_num, 1)
+            for i in range(class_num):
+                self.alpha[i, :] = 0.25
+        else:
+            self.alpha = alpha
+
+        self.gamma = gamma
+        self.class_num = class_num
+        self.reduction = reduction
+        self.loss_weight = loss_weight
+
+    def forward(self, inputs, targets, **kwargs):
+        N = inputs.size(0)
+        C = inputs.size(1)
+        P = F.softmax(inputs, dim=1)
+
+        class_mask = inputs.data.new(N, C).fill_(0)
+        ids = targets.view(-1, 1)
+        class_mask.scatter_(1, ids.data, 1.)
+        
+        if inputs.is_cuda and not self.alpha.is_cuda:
+            self.alpha = self.alpha.cuda()
+        alpha = self.alpha[ids.data.view(-1)]
+
+        probs = (P * class_mask).sum(1).view(-1, 1)
+
+        log_p = probs.log()
+        
+        batch_loss = -alpha * (torch.pow((1 - probs), self.gamma)) * log_p
+        
+        if self.reduction == 'mean':
+            loss = batch_loss.mean()
+        else:
+            loss = batch_loss.sum()
+        return loss * self.loss_weight
