@@ -115,6 +115,7 @@ class ClassBalancedDataset(object):
 
     def __init__(self, dataset, oversample_thr, method='sqrt'):
         assert method in ('sqrt', 'reciprocal')    # reciprocal，倒数，绝对 balance， repeat_factor = f(c) / max( fc )
+        self.method = method
         self.dataset = dataset
         self.oversample_thr = oversample_thr
         self.CLASSES = dataset.CLASSES
@@ -144,7 +145,8 @@ class ClassBalancedDataset(object):
         for k, v in category_freq.items():
             assert v > 0, f'caterogy {k} does not contain any images'
             category_freq[k] = v / num_images
-
+        print('category_freq:', category_freq)
+        
         # 2. For each category c, compute the category-level repeat factor:
         #    r(c) = max(1, sqrt(t/f(c)))
         if self.method == 'sqrt':
@@ -161,6 +163,8 @@ class ClassBalancedDataset(object):
                 cat_id: cat_freq_max / cat_freq
                 for cat_id, cat_freq in category_freq.items()
             }
+        else:
+            raise ValueError('Invalid method ' + self.method)
         print('category_repeat: ', category_repeat)
 
         # 3. For each image I and its labels L(I), compute the image-level
