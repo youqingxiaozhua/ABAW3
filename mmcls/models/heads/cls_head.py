@@ -58,7 +58,6 @@ class ClsHead(BaseHead):
                 f'top-{k}': a
                 for k, a in zip(self.topk, acc)
             }
-        losses['loss'] = loss
         return losses
 
     def forward_train(self, cls_score, gt_label, **kwargs):
