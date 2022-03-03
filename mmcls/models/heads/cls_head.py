@@ -29,7 +29,9 @@ class ClsHead(BaseHead):
                  init_cfg=None):
         super(ClsHead, self).__init__(init_cfg=init_cfg)
 
-        assert isinstance(loss, dict)
+        if isinstance(loss, dict):
+            loss['loss_name'] = 'loss'
+            loss = [loss]
         assert isinstance(topk, (int, tuple))
         if isinstance(topk, int):
             topk = (topk, )
@@ -37,7 +39,7 @@ class ClsHead(BaseHead):
             assert _topk > 0, 'Top-k should be larger than 0'
         self.topk = topk
 
-        self.compute_loss = build_loss(loss)
+        self.loss_config = loss
         self.compute_accuracy = Accuracy(topk=self.topk)
         self.cal_acc = cal_acc
 
@@ -45,7 +47,8 @@ class ClsHead(BaseHead):
         num_samples = len(cls_score)
         losses = dict()
         # compute loss
-        loss = self.compute_loss(
+        for loss in self.loss_config:
+            losses[loss['loss_name']] = build_loss(loss)(
             cls_score, gt_label, avg_factor=num_samples, **kwargs)
         if self.cal_acc:
             # compute accuracy
