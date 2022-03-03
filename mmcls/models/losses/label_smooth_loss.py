@@ -59,10 +59,12 @@ class LabelSmoothLoss(nn.Module):
                  num_classes=None,
                  mode=None,
                  reduction='mean',
-                 loss_weight=1.0):
+                 loss_weight=1.0,
+                 loss_name='smooth_loss'):
         super().__init__()
         self.num_classes = num_classes
         self.loss_weight = loss_weight
+        self.loss_name = loss_name
 
         assert (isinstance(label_smooth_val, float)
                 and 0 <= label_smooth_val < 1), \

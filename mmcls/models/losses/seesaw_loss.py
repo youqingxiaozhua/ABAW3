@@ -106,7 +106,8 @@ class SeesawLoss(nn.Module):
                  num_classes=1000,
                  eps=1e-2,
                  reduction='mean',
-                 loss_weight=1.0):
+                 loss_weight=1.0,
+                 loss_name='seesaw_loss'):
         super(SeesawLoss, self).__init__()
         assert not use_sigmoid, '`use_sigmoid` is not supported'
         self.use_sigmoid = False
@@ -116,6 +117,7 @@ class SeesawLoss(nn.Module):
         self.eps = eps
         self.reduction = reduction
         self.loss_weight = loss_weight
+        self.loss_name = loss_name
 
         self.cls_criterion = seesaw_ce_loss
 

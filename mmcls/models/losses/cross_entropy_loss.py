@@ -155,7 +155,8 @@ class CrossEntropyLoss(nn.Module):
                  reduction='mean',
                  loss_weight=1.0,
                  class_weight=None,
-                 pos_weight=None):
+                 pos_weight=None,
+                 loss_name='ce_loss'):
         super(CrossEntropyLoss, self).__init__()
         self.use_sigmoid = use_sigmoid
         self.use_soft = use_soft
@@ -167,6 +168,7 @@ class CrossEntropyLoss(nn.Module):
         self.loss_weight = loss_weight
         self.class_weight = class_weight
         self.pos_weight = pos_weight
+        self.loss_name = loss_name
 
         if self.use_sigmoid:
             self.cls_criterion = binary_cross_entropy
