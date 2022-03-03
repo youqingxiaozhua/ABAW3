@@ -38,6 +38,7 @@
 
 ## Improvement
 - Always log the best performance even the current epoch is not the best.
+- Supoort multiple loss.
 
 ## Introduction
 

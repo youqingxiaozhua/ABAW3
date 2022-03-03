@@ -19,12 +19,13 @@ class MSELoss(nn.Module):
     def __init__(self,
                  reduction='mean',
                  loss_weight=1.0,
+                 loss_name='mse_loss',
                 ):
         super().__init__()
 
         self.reduction = reduction
         self.loss_weight = loss_weight
-
+        self.loss_name = loss_name
 
         self.cls_criterion = nn.MSELoss(reduction=reduction)
     

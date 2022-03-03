@@ -119,7 +119,8 @@ class FocalLoss(nn.Module):
 
 @LOSSES.register_module()
 class FocalLossSingleLabel(nn.Module):
-    def __init__(self, class_num, alpha=None, gamma=2, reduction='mean', loss_weight=1.0):
+    def __init__(self, class_num, alpha=None, gamma=2, reduction='mean', loss_weight=1.0,
+                loss_name='focal_loss'):
         super().__init__()
         if alpha is None:
             self.alpha = torch.ones(class_num, 1)
@@ -132,6 +133,7 @@ class FocalLossSingleLabel(nn.Module):
         self.class_num = class_num
         self.reduction = reduction
         self.loss_weight = loss_weight
+        self.loss_name = loss_name
 
     def forward(self, inputs, targets, **kwargs):
         N = inputs.size(0)
