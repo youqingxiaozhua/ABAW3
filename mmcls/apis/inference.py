@@ -51,7 +51,7 @@ def init_model(config, checkpoint=None, device='cuda:0', options=None):
     return model
 
 
-def inference_model(model, img):
+def inference_model(model, imgs):
     """Inference image(s) with the classifier.
 
     Args:
@@ -64,18 +64,23 @@ def inference_model(model, img):
     """
     cfg = model.cfg
     device = next(model.parameters()).device  # model device
-    # build the data pipeline
-    if isinstance(img, str):
-        if cfg.data.test.pipeline[0]['type'] != 'LoadImageFromFile':
-            cfg.data.test.pipeline.insert(0, dict(type='LoadImageFromFile'))
-        data = dict(img_info=dict(filename=img), img_prefix=None)
-    else:
-        if cfg.data.test.pipeline[0]['type'] == 'LoadImageFromFile':
-            cfg.data.test.pipeline.pop(0)
-        data = dict(img=img)
-    test_pipeline = Compose(cfg.data.test.pipeline)
-    data = test_pipeline(data)
-    data = collate([data], samples_per_gpu=1)
+    batch_data = []
+    if isinstance(imgs, str):
+        imgs = [imgs]
+    for img in imgs:
+        # build the data pipeline
+        if isinstance(img, str):
+            if cfg.data.test.pipeline[0]['type'] != 'LoadImageFromFile':
+                cfg.data.test.pipeline.insert(0, dict(type='LoadImageFromFile'))
+            data = dict(img_info=dict(filename=img), img_prefix=None)
+        else:
+            if cfg.data.test.pipeline[0]['type'] == 'LoadImageFromFile':
+                cfg.data.test.pipeline.pop(0)
+            data = dict(img=img)
+        test_pipeline = Compose(cfg.data.test.pipeline)
+        data = test_pipeline(data)
+        batch_data.append(data)
+    data = collate(batch_data, samples_per_gpu=len(batch_data))
     if next(model.parameters()).is_cuda:
         # scatter to specified GPU
         data = scatter(data, [device])[0]
@@ -83,9 +88,14 @@ def inference_model(model, img):
     # forward the model
     with torch.no_grad():
         scores = model(return_loss=False, **data)
-        pred_score = np.max(scores, axis=1)[0]
-        pred_label = np.argmax(scores, axis=1)[0]
-        result = {'pred_label': pred_label, 'pred_score': float(pred_score)}
+        pred_score = np.max(scores, axis=1)
+        pred_label = np.argmax(scores, axis=1)
+        # adapt for mmcls
+        if len(pred_score) == 1:
+            pred_score = pred_score[0]
+        if len(pred_label) == 1:
+            pred_label = pred_label[0]
+        result = {'pred_label': pred_label, 'pred_score': float(pred_score), 'pred_logit': scores}
     result['pred_class'] = model.CLASSES[result['pred_label']]
     return result
 
