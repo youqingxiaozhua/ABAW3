@@ -65,8 +65,10 @@ def inference_model(model, imgs):
     cfg = model.cfg
     device = next(model.parameters()).device  # model device
     batch_data = []
+    single_input = False
     if isinstance(imgs, str):
         imgs = [imgs]
+        single_input = True
     for img in imgs:
         # build the data pipeline
         if isinstance(img, str):
@@ -90,14 +92,17 @@ def inference_model(model, imgs):
         scores = model(return_loss=False, **data)
         pred_score = np.max(scores, axis=1)
         pred_label = np.argmax(scores, axis=1)
+        pred_class = 
         # adapt for mmcls
-        if len(pred_score) == 1:
-            pred_score = pred_score[0]
-        if len(pred_label) == 1:
+        if single_input:
+            pred_score = float(pred_score[0])
             pred_label = pred_label[0]
-        result = {'pred_label': pred_label, 'pred_score': float(pred_score), 'pred_logit': scores}
-    result['pred_class'] = model.CLASSES[result['pred_label']]
-    return result
+            pred_class = model.CLASSES[pred_label]
+        else:
+            pred_class = [model.CLASSES[i] for i in pred_label]
+        result = {'pred_label': pred_label, 'pred_score': pred_score, 'pred_logit': scores,
+                  'pred_class': pred_class}
+        return result
 
 
 def show_result_pyplot(model,
