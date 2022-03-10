@@ -82,6 +82,7 @@ def inference_model(model, imgs):
         test_pipeline = Compose(cfg.data.test.pipeline)
         data = test_pipeline(data)
         batch_data.append(data)
+    batch_data = [dict(img=i['img']) for i in batch_data]  # remove img_metas
     data = collate(batch_data, samples_per_gpu=len(batch_data))
     if next(model.parameters()).is_cuda:
         # scatter to specified GPU
@@ -92,7 +93,6 @@ def inference_model(model, imgs):
         scores = model(return_loss=False, **data)
         pred_score = np.max(scores, axis=1)
         pred_label = np.argmax(scores, axis=1)
-        pred_class = 
         # adapt for mmcls
         if single_input:
             pred_score = float(pred_score[0])
