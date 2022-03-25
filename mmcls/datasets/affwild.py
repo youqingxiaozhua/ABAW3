@@ -40,6 +40,41 @@ class ABAW3(BaseDataset):
         'Other'
     ]
 
+    COARSE_CLASSES = [
+        'Neutral',
+        'Happiness',
+        'Surprise',
+        'Other',
+        'Negative'
+    ]
+    coarse_map = [0, 4, 4, 4, 1, 4, 2, 3]
+
+    NEGATIVE_CLASSES = [
+        'Anger',
+        'Disgust',
+        'Fear',
+        'Sadness',
+    ]
+    negative_map = [-1, 0, 1, 2, -1, 3, -1, -1]
+
+    task = 'all'  # 'all', coarse', 'negative'
+    def __init__(self,
+                 data_prefix,
+                 pipeline,
+                 classes=None,
+                 ann_file=None,
+                 test_mode=False):
+        super().__init__(data_prefix, pipeline, classes, ann_file, test_mode)
+        self.CLASSES = self.update_classes()
+    
+    def update_classes(self):
+        if self.task_type == 'EXPR':
+            return self.CLASSES
+        elif self.task_type == 'AU':
+            return [f'AU{i+1}' for i in range(12)]
+        elif self.task_type == 'VA':
+            return ['V', 'A']
+
     def process_one_ann(self, dir, ann_file:str):
         with open(os.path.join(dir, ann_file), 'r') as f:
             data = f.read().strip().split('\n')[1:]
@@ -52,10 +87,13 @@ class ABAW3(BaseDataset):
 
     def load_annotations(self, label_file=None):
         if 'EXPR_' in self.ann_file:
+            self.task_type = 'EXPR'
             return self.load_ce_annotations(label_file)
         elif 'AU_' in self.ann_file:
+            self.task_type = 'AU'
             return self.load_au_annotations()
         elif 'VA_' in self.ann_file:
+            self.task_type = 'VA'
             return self.load_va_annotations()
         else:
             raise ValueError('invalid task')
@@ -75,18 +113,24 @@ class ABAW3(BaseDataset):
         for ann_file in ann_files:  # xxx.txt
             ce_labels = self.process_one_ann(label_file, ann_file)
             for i, label in enumerate(ce_labels):
-                if label == '-1':
+                label = int(label)
+                if label == -1:
                     continue
+                if self.task == 'coarse':
+                    label = self.coarse_map[label]
+                    self.CLASSES = self.COARSE_CLASSES
+                elif self.task == 'negative':
+                    label = self.negative_map[label]
+                    self.CLASSES = self.NEGATIVE_CLASSES
+                    if label == -1:     # Only negative has -1
+                        continue
                 img_prefix = os.path.join(self.data_prefix, ann_file.replace('.txt', ''))
                 filename = f'{str(i).zfill(5)}.jpg'
                 if not os.path.isfile(os.path.join(img_prefix, filename)):
                     continue
                 info = {'img_prefix': img_prefix}
                 info['img_info'] = {'filename': filename}
-                label = int(label)
                 info['gt_label'] = np.array(label, dtype=np.int64)
-                # if training:
-                #     info['au_label'] = np.array(au_labels[i].split(','), dtype=np.int64)
                 data_infos.append(info)
 
         return data_infos

@@ -107,7 +107,7 @@ def binary_cross_entropy(pred,
     """
     # Ensure that the size of class_weight is consistent with pred and label to
     # avoid automatic boracast,
-    assert pred.dim() == label.dim()
+    assert pred.dim() == label.dim(), f'{pred.shape}, {label.shape}'
 
     if class_weight is not None:
         N = pred.size()[0]

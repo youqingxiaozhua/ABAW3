@@ -3,24 +3,26 @@ _base_ = [
     '../_base_/default_runtime.py'
 ]
 
+num_classes = 4
+
 ce_head = dict(
     type='LinearClsHead',
-    num_classes=8,
-    in_channels=512,
-    loss=dict(type='CrossEntropyLoss', loss_name='ce_loss', loss_weight=1.0),
+    num_classes=num_classes,
+    in_channels=2048,
+    loss=[
+        dict(type='CrossEntropyLoss', loss_name='ce_loss', loss_weight=1.0),
+        ],
     topk=(1,),
 )
 
 model = dict(
     type='ImageClassifier',
-    # freeze=('backbone', ),
     backbone=dict(
-        type='IRSE',
-        input_size=(112, 112),
-        num_layers=50,
-        mode='ir',
-        init_cfg=dict(type='Pretrained', checkpoint='weights/backbone_ir50_ms1m_epoch120.pth')
-        # init_cfg=dict(type='Pretrained', checkpoint='weights/backbone_ir152_ms1m_epoch_112.pth')
+        type='ResNeStFaceX',
+        num_layers=50, 
+        drop_ratio=0.4,
+        feat_dim=512, out_h=7, out_w=7,
+        init_cfg=dict(type='Pretrained', checkpoint='weights/face/FaceX-ResNeSt50.pt', prefix='backbone.')
     ),
     neck=dict(type='GlobalAveragePooling'),
     head=ce_head)
@@ -31,7 +33,7 @@ data = dict(
 )
 
 # optimizer
-optimizer = dict(type='SGD', lr=0.005, momentum=0.9, weight_decay=0.01)
+optimizer = dict(type='SGD', lr=0.005, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=None)
 # learning policy
 lr_config = dict(
@@ -41,6 +43,5 @@ lr_config = dict(
             warmup_ratio=0.1,
             warmup_by_epoch=False,)
 
-runner = dict(max_iters=15000)
-evaluation = dict(interval=5000)
+runner = dict(max_iters=10000)
 

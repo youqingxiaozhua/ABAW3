@@ -18,7 +18,7 @@ from ..utils import PatchEmbed, PatchMerging, ShiftWindowMSA
 from .base_backbone import BaseBackbone
 
 from itertools import repeat
-from torch._six import container_abcs
+import collections.abc as container_abcs
 def _ntuple(n) :
     def parse(x) -> Tuple[int]:
         if isinstance(x, container_abcs.Iterable):
@@ -549,11 +549,11 @@ class SwinTransformerFaceX(BaseBackbone):
             self.layers.append(layer)
 
         #self.norm = norm_layer(self.num_features)
-        #self.avgpool = nn.AdaptiveAvgPool1d(1)
-        self.output_layer = nn.Sequential(norm_layer(self.num_features),
-                                       Flatten(),
-                                       nn.Linear(49*768, 512),
-                                       nn.BatchNorm1d(512))
+        self.avgpool = nn.AdaptiveAvgPool1d(1)
+        # self.output_layer = nn.Sequential(norm_layer(self.num_features),
+        #                                Flatten(),
+        #                                nn.Linear(49*768, 512),
+        #                                nn.BatchNorm1d(512))
 
         self.apply(self._init_weights)
 
@@ -584,9 +584,10 @@ class SwinTransformerFaceX(BaseBackbone):
             x = layer(x)
         
         #x = self.norm(x)  # B L C --> [128, 49, 768]
-        #x = self.avgpool(x.transpose(1, 2))  # B C 1 --> [128, 768, 1]
-        #x = torch.flatten(x, 1)
-        x = self.output_layer(x)
+        x = self.avgpool(x.transpose(1, 2))  # B C 1 --> [128, 768, 1]
+        x = torch.flatten(x, 1)
+        # x = self.output_layer(x)
+
         return x
 
     def forward(self, x):
